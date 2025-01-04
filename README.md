@@ -19,8 +19,8 @@ This repository contains an advanced PDF Chat Assistant built using LangChain, S
 ### Steps
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-repo/advanced-pdf-chat-assistant.git
-   cd advanced-pdf-chat-assistant
+   https://github.com/SambhavMehta228/ChatWithPDF.git
+   cd ChatWithPDF
    ```
 
 2. **Create a virtual environment**:
