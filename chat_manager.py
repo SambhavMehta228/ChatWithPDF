@@ -1,11 +1,13 @@
 from typing import Dict, List
 from langchain.prompts import PromptTemplate
-from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
+from langchain_core.prompts import MessagesPlaceholder
+from langchain_core.messages import AIMessage, HumanMessage
 
 class ChatManager:
-    def __init__(self, model_name: str = "gpt-4", temperature: float = 0.3):
+    def __init__(self, model_name: str = "gpt-3.5-turbo", temperature: float = 0.3):
         self.model_name = model_name
         self.temperature = temperature
         self.prompt = self._create_prompt()
@@ -36,11 +38,16 @@ class ChatManager:
             input_variables=["context", "question"]
         )
     
-    def create_chain(self, retriever) -> ConversationalRetrievalChain:
+    def create_chain(self, vectorstore) -> ConversationalRetrievalChain:
         """Create a conversation chain with the configured properties."""
         llm = ChatOpenAI(
             model_name=self.model_name,
             temperature=self.temperature
+        )
+        
+        retriever = vectorstore.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": 3}
         )
         
         memory = ConversationBufferMemory(
@@ -49,12 +56,23 @@ class ChatManager:
             output_key='answer'
         )
         
+        condense_question_prompt = PromptTemplate.from_template(
+            """Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
+
+            Chat History:
+            {chat_history}
+            Follow Up Input: {question}
+            Standalone Question:"""
+        )
+        
         return ConversationalRetrievalChain.from_llm(
             llm=llm,
             retriever=retriever,
             memory=memory,
             combine_docs_chain_kwargs={'prompt': self.prompt},
-            return_source_documents=True
+            return_source_documents=True,
+            condense_question_prompt=condense_question_prompt,
+            verbose=True
         )
     
     def process_response(
